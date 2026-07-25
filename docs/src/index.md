@@ -90,6 +90,7 @@ OpaqueRef
 pack_any
 unpack(::OpaqueRef, ::Type{T}) where {T}
 unpack_checked(::OpaqueRef, ::Type{T}) where {T}
+payload
 repack!(::OpaqueRef, ::T) where {T}
 ```
 

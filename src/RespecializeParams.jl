@@ -3,7 +3,7 @@ module RespecializeParams
 import FunctionWrappersWrappers
 
 export OpaqueParams, OpaqueRef, OpaqueVoid,
-    pack, pack_any, pack_auto, unpack, unsafe_unpack, unpack_checked, repack!,
+    pack, pack_any, pack_auto, unpack, unsafe_unpack, unpack_checked, repack!, payload,
     opaque_container_type, opaque_signature, wrap_void_opaque
 
 """
@@ -194,6 +194,30 @@ Like `unpack` but also verifies `T` matches what was packed via `objectid`.
     )
     return unpack(op, T)
 end
+
+"""
+    payload(op::OpaqueRef) -> Any
+
+Read the payload back without naming its type. Returns `Any`, so this is
+deliberately **not** type-stable — it exists for cold paths that must inspect or
+transform the payload while having no concrete type available (parameter
+promotion, initialization, symbolic indexing). Prefer [`unpack`](@ref) with a
+concrete `T` anywhere the type is known, and always on a hot path: `unpack` is a
+pointer load with a `::T` assertion and stays inference-friendly, whereas
+`payload` forces the caller to handle an `Any`.
+
+```jldoctest
+julia> using RespecializeParams
+
+julia> op = pack_any([1.0, 2.0]);
+
+julia> payload(op)
+2-element Vector{Float64}:
+ 1.0
+ 2.0
+```
+"""
+@inline payload(op::OpaqueRef) = op.ref[]
 
 """
     repack!(op::OpaqueRef, x) -> op
