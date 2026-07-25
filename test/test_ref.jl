@@ -106,3 +106,31 @@ end
     op = pack_any(VecP([1.0, 2.0], 0.5))
     @test op isa OpaqueRef
 end
+
+# ---------------------------------------------------------------------------
+# `payload`: typeless read for cold paths
+# ---------------------------------------------------------------------------
+
+@testset "payload reads without naming the type" begin
+    for p in ([1.0, 2.0, 3.0], VecP([1.0, 2.0], 0.5), MutP(1.5, 7), Dict(:a => 1))
+        op = pack_any(p)
+        # same object identity as `unpack` with the concrete type
+        @test payload(op) === unpack(op, typeof(p))
+    end
+
+    # Deliberately typeless: the return type is Any, which is what makes it
+    # usable where no concrete type is available. Callers on hot paths should
+    # use `unpack` instead, which stays inference-friendly.
+    op = pack_any([1.0, 2.0])
+    @test Base.return_types(payload, (OpaqueRef,)) == [Any]
+    @test Base.return_types(unpack, (OpaqueRef, Type{Vector{Float64}})) ==
+        [Vector{Float64}]
+
+    # sees mutation through the reference, and survives repack!
+    v = [1.0, 2.0]
+    op = pack_any(v)
+    push!(v, 3.0)
+    @test payload(op) == [1.0, 2.0, 3.0]
+    repack!(op, [9.0])
+    @test payload(op) == [9.0]
+end
