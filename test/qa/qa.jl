@@ -19,7 +19,6 @@ using Test
 run_qa(
     RespecializeParams;
     jet_kwargs = (; target_modules = (RespecializeParams,)),
-    explicit_imports = true,
     ei_kwargs = (;
         all_qualified_accesses_are_public = (;
             ignore = (:RefValue, Symbol("@preserve"), :unsafe_convert),
