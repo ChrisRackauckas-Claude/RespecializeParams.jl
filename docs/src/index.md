@@ -9,7 +9,7 @@ There are two containers:
 
   - [`OpaqueParams`](@ref) — for `isbits` payloads. Backed by `Vector{UInt8}`;
     `unpack` is a single `unsafe_load` with no allocation.
-  - [`OpaqueRef`](@ref) — for non-`isbits` payloads. Backed by `Ref{Any}`;
+  - [`OpaqueRef`](@ref) — for non-`isbits` payloads. Backed by a boxed `Any` field;
     `unpack` is a pointer load with a `::T` assertion. Identity-preserving:
     mutating the underlying object is observable through the wrapper.
 
@@ -100,10 +100,12 @@ repack!(::OpaqueRef, ::T) where {T}
 OpaqueVoid
 ```
 
-### Solver-integration helpers
+### Developer API: solver-integration helpers
 
 Shared pieces a SciML solver stack uses to install `OpaqueVoid` under the
-`AutoDePSpecialize` specialization level.
+`AutoDePSpecialize` specialization level. These exports are versioned extension
+APIs for solver developers, not general end-user entry points. Depend on their
+documented callback contract only.
 
 ```@docs
 opaque_container_type
@@ -117,7 +119,7 @@ wrap_void_opaque
 | Property                     | `OpaqueParams`         | `OpaqueRef`             |
 |:---------------------------- |:---------------------- |:----------------------- |
 | Payload constraint           | `isbits` only          | anything                |
-| Storage                      | `Vector{UInt8}` (copy) | `Ref{Any}` (by ref)     |
+| Storage                      | `Vector{UInt8}` (copy) | boxed `Any` field        |
 | Mutation propagation         | no (snapshot at pack)  | yes (identity preserved)|
 | `unpack` cost                | `unsafe_load`          | pointer load + tag check|
 | Best for                     | plain numeric structs  | structs with `Vector`/`Dict`/`Function` fields |

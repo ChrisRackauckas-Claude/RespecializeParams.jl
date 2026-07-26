@@ -208,6 +208,38 @@ end
     @test m.sig <: Tuple{OpaqueVoid, Any, Any, OpaqueParams, Any}
 end
 
+function run_opaque_callback!(callback, out, state, opaque, time)
+    callback(out, state, opaque, time)
+    return out
+end
+
+function run_opaque_callback!(callback, out, state, opaque)
+    callback(out, state, opaque)
+    return out
+end
+
+@testset "OpaqueVoid generic callback interface" begin
+    bits = PendulumP(4.0, 2.0, 1.0)
+    bits_callback = OpaqueVoid(PendulumP, pendulum_rhs!)
+    bits_out = [0.0, 0.0]
+    @test run_opaque_callback!(bits_callback, bits_out, [3.0, 5.0], pack(bits), 0.0) === bits_out
+    @test bits_out == [5.0, -2.0 * sin(3.0)]
+
+    ref = VecP([3.0])
+    ref_callback = OpaqueVoid(VecP, vecp_rhs!)
+    ref_out = [0.0]
+    @test run_opaque_callback!(ref_callback, ref_out, [2.0], pack_any(ref), 0.0) === ref_out
+    @test ref_out == [-6.0]
+
+    residual!(out, state, p::LotkaP) = (out[1] = p.α * state[1] - p.β; nothing)
+    residual = OpaqueVoid(LotkaP, residual!)
+    residual_out = [0.0]
+    @test run_opaque_callback!(
+        residual, residual_out, [2.0], pack(LotkaP(3.0, 1.0, 0.0, 0.0))
+    ) === residual_out
+    @test residual_out == [5.0]
+end
+
 @testset "OpaqueVoid is allocation-free" begin
     op = pack(PendulumP(9.81, 1.0, 0.5))
     w = OpaqueVoid(PendulumP, pendulum_rhs!)

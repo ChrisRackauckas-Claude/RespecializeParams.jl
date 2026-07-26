@@ -8,7 +8,8 @@ makedocs(
     modules = [RespecializeParams],
     sitename = "RespecializeParams.jl",
     clean = true,
-    doctest = false,
+    doctest = true,
+    checkdocs = :exports,
     linkcheck = true,
     format = Documenter.HTML(
         canonical = "https://docs.sciml.ai/RespecializeParams/stable/"
